@@ -18,6 +18,13 @@ typedef struct {
     float a;
 } Gen;
 
+float clampf(float v, float lo, float hi)
+{
+    if (v < lo) v = lo;
+    if (v > hi) v = hi;
+    return v;
+}
+
 void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 {
     float gen_step = (1.0f / (gen->step_time * SAMPLE_DT));
@@ -149,11 +156,9 @@ int main(void)
                 if ((buttons & SDL_BUTTON_LMASK) == 0) {
                     dragging_grip = false;
                 } else {
-                    float xf = x - STEP_TIME_GRIP_SIZE;
                     float grip_min = STEP_TIME_SLIDER_X - STEP_TIME_GRIP_SIZE;
                     float grip_max = STEP_TIME_SLIDER_X - STEP_TIME_GRIP_SIZE + STEP_TIME_SLIDER_LEN;
-                    if (xf < grip_min) xf = grip_min;
-                    if (xf > grip_max) xf = grip_max;
+                    float xf = clampf(x - STEP_TIME_GRIP_SIZE, grip_min, grip_max);
                     gen.step_time = (xf - grip_min) / STEP_TIME_SLIDER_LEN * (STEP_TIME_MAX - STEP_TIME_MIN) + STEP_TIME_MIN;
                 }
             }
