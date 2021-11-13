@@ -25,13 +25,23 @@ float clampf(float v, float lo, float hi)
     return v;
 }
 
+float lerpf(float a, float b, float t)
+{
+    return (b - a) * t + a;
+}
+
+float ilerpf(float a, float b, float v)
+{
+    return (v - a) / (b - a);
+}
+
 void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 {
     float gen_step = (1.0f / (gen->step_time * SAMPLE_DT));
 
     for (size_t i = 0; i < stream_len; ++i) {
         gen->a += gen_step * SAMPLE_DT;
-        stream[i] = (Sint16) floorf((gen->next - gen->current) * cosf(gen->a));
+        stream[i] = lerpf(gen->next, gen->current, cosf(gen->a));
 
         if (gen->a >= 1.0f) {
             Sint16 value = rand() % (1 << 10);
@@ -157,9 +167,11 @@ int main(void)
                     dragging_grip = false;
                 } else {
                     float grip_min = STEP_TIME_SLIDER_X - STEP_TIME_GRIP_SIZE;
-                    float grip_max = STEP_TIME_SLIDER_X - STEP_TIME_GRIP_SIZE + STEP_TIME_SLIDER_LEN;
+                    float grip_max = grip_min + STEP_TIME_SLIDER_LEN;
                     float xf = clampf(x - STEP_TIME_GRIP_SIZE, grip_min, grip_max);
-                    gen.step_time = (xf - grip_min) / STEP_TIME_SLIDER_LEN * (STEP_TIME_MAX - STEP_TIME_MIN) + STEP_TIME_MIN;
+                    xf = ilerpf(grip_min, grip_max, xf);
+                    xf = lerpf(STEP_TIME_MIN, STEP_TIME_MAX, xf);
+                    gen.step_time = xf;
                 }
             }
         }
