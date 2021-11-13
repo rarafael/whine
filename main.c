@@ -98,10 +98,6 @@ int main(void)
                 quit = true;
             }
             break;
-
-            case SDL_MOUSEBUTTONDOWN: {
-                
-            } break;
             }
         }
 
