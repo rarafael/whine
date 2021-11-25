@@ -11,8 +11,8 @@
 #define STEP_TIME_MIN 1.0f
 #define STEP_TIME_MAX 200.0f
 
-// TODO: Add sliders for volume
-// TODO: Visualize a smol section of the white noise sound wave
+// TODOOO: Add sliders for volume
+// TODOO: Visualize a smol section of the white noise sound wave
 // TODO: Mix in more randomness into the generated white noise
 
 typedef struct {
