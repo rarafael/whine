@@ -43,7 +43,7 @@ void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 
     for (size_t i = 0; i < stream_len; ++i) {
         gen->a += gen_step * SAMPLE_DT;
-        stream[i] = lerpf(gen->next, gen->current, gen->a * gen->a) * gen->volume;
+        stream[i] = lerpf(gen->next, gen->current, gen->a) * gen->volume;
 
         if (gen->a >= 1.0f) {
             Sint16 value = rand_r(&gen->seedp) % (1 << 10);
