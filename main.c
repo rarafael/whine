@@ -9,7 +9,7 @@
 #define FREQ 48000
 #define SAMPLE_DT (1.0f / FREQ)
 
-// TODO: Mix in more randomness into the generated white noise
+// TODO: Better color scheme for the elements
 
 typedef struct {
     unsigned int seedp;
@@ -39,13 +39,17 @@ float ilerpf(float a, float b, float v)
 
 void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 {
+    // TODOO: Mix in more randomness into the generated white noise (subfrequency)
+    // TODOOOO: the first "period" of the generator is always 0
     float gen_step = (1.0f / (gen->step_time * SAMPLE_DT));
 
     for (size_t i = 0; i < stream_len; ++i) {
         gen->a += gen_step * SAMPLE_DT;
+        // TODO: smoother interpolation
         stream[i] = lerpf(gen->next, gen->current, gen->a) * gen->volume;
 
         if (gen->a >= 1.0f) {
+            // TODOOO: the periods have weird jumps
             Sint16 value = rand_r(&gen->seedp) % (1 << 10);
             Sint16 sign = (rand_r(&gen->seedp) % 2) * 2 - 1;
             gen->current = gen->next;
@@ -79,6 +83,7 @@ void wave_preview(SDL_Renderer *renderer,
                   float pos_x, float pos_y,
                   Sint16 *stream, size_t stream_len)
 {
+    // TODO: when sample_width < 0 nothing is drawn
     float sample_width = WAVE_PREVIEW_WIDTH / (float) stream_len;
     float y_axis = pos_y + WAVE_PREVIEW_HEIGHT * 0.5f;
 
@@ -111,6 +116,8 @@ bool slider(SDL_Renderer *renderer, int id,
 {
     bool modified = false;
 
+    // TODO: display the current value of the slider
+
     // Slider Body
     {
         SDL_SetRenderDrawColor(renderer, HEXCOLOR(SLIDER_COLOR));
@@ -128,6 +135,8 @@ bool slider(SDL_Renderer *renderer, int id,
         assert(min <= max);
         float grip_value = ilerpf(min, max, *value) * len;
 
+        // TODO: the grip should go outside of the slider body
+
         SDL_SetRenderDrawColor(renderer, HEXCOLOR(SLIDER_GRIP_COLOR));
         SDL_Rect rect = {
             .x = pos_x - SLIDER_GRIP_SIZE + grip_value,
@@ -139,6 +148,8 @@ bool slider(SDL_Renderer *renderer, int id,
 
         int x, y;
         Uint32 buttons = SDL_GetMouseState(&x, &y);
+
+        // TODO: the grip should maintain the initial offset between its position and mouse_x
 
         if (active_id < 0) {
             SDL_Point cursor = {x, y};
@@ -238,6 +249,8 @@ int main(void)
 
         SDL_SetRenderDrawColor(renderer, HEXCOLOR(BACKGROUND_COLOR));
         SDL_RenderClear(renderer);
+
+        // TODO: automatic layouting of the widgets based on the window size
 
         if (slider(renderer, SLIDER_FREQ, 100.0f, 100.0f, 500.0f, &gen.step_time, 1.0f, 50.0f)) {
             regen_preview_stream(&gen);
