@@ -175,7 +175,6 @@ Sint16 preview_stream[PREVIEW_STREAM_CAP];
 void regen_preview_stream(const Gen *gen)
 {
     Gen preview_gen = {
-        .seedp = 69,
         .step_time = gen->step_time,
         .volume = gen->volume,
     };
@@ -202,7 +201,6 @@ int main(void)
     }
 
     Gen gen = {
-        .seedp = 69,
         .step_time = 10.0f,
         .volume = 1.0f,
     };
