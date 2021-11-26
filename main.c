@@ -102,13 +102,15 @@ void wave_preview(SDL_Renderer *renderer,
 
 #define SLIDER_THICCNESS 5.0f
 #define SLIDER_COLOR 0x00FF00FF
-#define SLIDER_GRIP_SIZE 10.0f
+#define SLIDER_GRIP_SIZE 30.0f
 #define SLIDER_GRIP_COLOR 0xFF0000FF
 
 bool slider(SDL_Renderer *renderer, int id,
             float pos_x, float pos_y, float len,
             float *value, float min, float max)
 {
+    bool modified = false;
+
     // Slider Body
     {
         SDL_SetRenderDrawColor(renderer, HEXCOLOR(SLIDER_COLOR));
@@ -154,13 +156,13 @@ bool slider(SDL_Renderer *renderer, int id,
                     xf = ilerpf(grip_min, grip_max, xf);
                     xf = lerpf(min, max, xf);
                     *value = xf;
-                    return true;
+                    modified = true;
                 }
             }
         }
     }
 
-    return false;
+    return modified;
 }
 
 typedef enum {
