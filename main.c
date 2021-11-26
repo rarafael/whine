@@ -202,7 +202,7 @@ int main(void)
 
     Gen gen = {
         .step_time = 10.0f,
-        .volume = 1.0f,
+        .volume = 0.5f,
     };
 
     regen_preview_stream(&gen);
