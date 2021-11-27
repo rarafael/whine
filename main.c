@@ -14,7 +14,7 @@
 // The state of the white noise generator
 typedef struct {
     // These are "public" user customizable fields.
-    // TODO: period should be probably in hertz
+    // TODOOO: period should be probably in hertz
     float period;           // the duration of the period (in samples)
     float volume;           // the volume of the samples (between 0.0 and 1.0)
 
@@ -64,7 +64,7 @@ void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 
     for (size_t i = 0; i < stream_len; ++i) {
         gen->a += step;
-        // TODO: smoother interpolation
+        // TODOO: smoother interpolation
         stream[i] = floorf(lerpf(gen->current, gen->target, gen->a) * gen->volume);
 
         if (gen->a >= 1.0f) {
@@ -191,7 +191,7 @@ bool slider(SDL_Renderer *renderer, int id,
 }
 
 typedef enum {
-    // TODO: add a slider for the amount of preview samples
+    // TODOO: add a slider for the amount of preview samples
     SLIDER_FREQ = 0,
     SLIDER_VOLUME,
 } Slider;
@@ -264,7 +264,7 @@ int main(void)
         SDL_SetRenderDrawColor(renderer, HEXCOLOR(BACKGROUND_COLOR));
         SDL_RenderClear(renderer);
 
-        // TODO: automatic layouting of the widgets based on the window size
+        // TODOO: automatic layouting of the widgets based on the window size
 
         if (slider(renderer, SLIDER_FREQ, 100.0f, 100.0f, 500.0f, &gen.period, 1.0f, 50.0f)) {
             regen_preview_stream(&gen);
