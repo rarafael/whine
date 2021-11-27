@@ -7,14 +7,15 @@
 #include <SDL.h>
 
 #define FREQ 48000
-#define SAMPLE_DT (1.0f / FREQ)
+#define SAMPLE_DT (1.0f / (float) FREQ)
 
 // TODO: Better color scheme for the elements
 
 // The state of the white noise generator
 typedef struct {
-    // These are "public" user customizable fileds.
-    float period;           // the duration of the period (in ms)
+    // These are "public" user customizable fields.
+    // TODO: period should be probably in hertz
+    float period;           // the duration of the period (in samples)
     float volume;           // the volume of the samples (between 0.0 and 1.0)
 
     // These fields are "private" and should be simply zero initialized and left alone
@@ -44,32 +45,30 @@ float ilerpf(float a, float b, float v)
 
 void next_period(Gen *gen)
 {
-    // TODOOO: the periods have weird jumps
     Sint16 value = rand_r(&gen->seedp) % (1 << 10);
     Sint16 sign = (rand_r(&gen->seedp) % 2) * 2 - 1;
     gen->current = gen->target;
     gen->target = value * sign;
+    gen->a = 0.0f;
 }
 
 void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 {
     if (!gen->initialized) {
         next_period(gen);
-        gen->a = 0.0f;
         gen->initialized = true;
     }
 
     // TODOO: Mix in more randomness into the generated white noise (subfrequency)
-    float step = (1.0f / (gen->period * SAMPLE_DT));
+    float step = 1.0f / (float) gen->period;
 
     for (size_t i = 0; i < stream_len; ++i) {
-        gen->a += step * SAMPLE_DT;
+        gen->a += step;
         // TODO: smoother interpolation
-        stream[i] = lerpf(gen->target, gen->current, gen->a) * gen->volume;
+        stream[i] = floorf(lerpf(gen->current, gen->target, gen->a) * gen->volume);
 
         if (gen->a >= 1.0f) {
             next_period(gen);
-            gen->a = 0.0f;
         }
     }
 }
