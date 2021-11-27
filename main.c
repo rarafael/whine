@@ -11,13 +11,18 @@
 
 // TODO: Better color scheme for the elements
 
+// The state of the white noise generator
 typedef struct {
-    unsigned int seedp;
-    Sint16 current;
-    Sint16 next;
-    float step_time;
-    float volume;
-    float a;
+    // These are "public" user customizable fileds.
+    float period;           // the duration of the period (in ms)
+    float volume;           // the volume of the samples (between 0.0 and 1.0)
+
+    // These fields are "private" and should be simply zero initialized and left alone
+    bool initialized;       // indicates whether the generator was already initialized
+    unsigned int seedp;     // the current state of rand_r
+    Sint16 current;         // the current value of the generate sample (between SDL_MIN_SINT16 and SDL_MAX_SINT16)
+    Sint16 target;          // the target value of the generate sample (between SDL_MIN_SINT16 and SDL_MAX_SINT16)
+    float a;                // interpolator beween `current` and `target`
 } Gen;
 
 float clampf(float v, float lo, float hi)
@@ -37,23 +42,33 @@ float ilerpf(float a, float b, float v)
     return (v - a) / (b - a);
 }
 
+void next_period(Gen *gen)
+{
+    // TODOOO: the periods have weird jumps
+    Sint16 value = rand_r(&gen->seedp) % (1 << 10);
+    Sint16 sign = (rand_r(&gen->seedp) % 2) * 2 - 1;
+    gen->current = gen->target;
+    gen->target = value * sign;
+}
+
 void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 {
+    if (!gen->initialized) {
+        next_period(gen);
+        gen->a = 0.0f;
+        gen->initialized = true;
+    }
+
     // TODOO: Mix in more randomness into the generated white noise (subfrequency)
-    // TODOOOO: the first "period" of the generator is always 0
-    float gen_step = (1.0f / (gen->step_time * SAMPLE_DT));
+    float step = (1.0f / (gen->period * SAMPLE_DT));
 
     for (size_t i = 0; i < stream_len; ++i) {
-        gen->a += gen_step * SAMPLE_DT;
+        gen->a += step * SAMPLE_DT;
         // TODO: smoother interpolation
-        stream[i] = lerpf(gen->next, gen->current, gen->a) * gen->volume;
+        stream[i] = lerpf(gen->target, gen->current, gen->a) * gen->volume;
 
         if (gen->a >= 1.0f) {
-            // TODOOO: the periods have weird jumps
-            Sint16 value = rand_r(&gen->seedp) % (1 << 10);
-            Sint16 sign = (rand_r(&gen->seedp) % 2) * 2 - 1;
-            gen->current = gen->next;
-            gen->next = value * sign;
+            next_period(gen);
             gen->a = 0.0f;
         }
     }
@@ -188,7 +203,7 @@ Sint16 preview_stream[PREVIEW_STREAM_CAP];
 void regen_preview_stream(const Gen *gen)
 {
     Gen preview_gen = {
-        .step_time = gen->step_time,
+        .period = gen->period,
         .volume = gen->volume,
     };
     white_noise(&preview_gen, preview_stream, PREVIEW_STREAM_CAP);
@@ -214,7 +229,7 @@ int main(void)
     }
 
     Gen gen = {
-        .step_time = 10.0f,
+        .period = 10.0f,
         .volume = 0.5f,
     };
 
@@ -252,7 +267,7 @@ int main(void)
 
         // TODO: automatic layouting of the widgets based on the window size
 
-        if (slider(renderer, SLIDER_FREQ, 100.0f, 100.0f, 500.0f, &gen.step_time, 1.0f, 50.0f)) {
+        if (slider(renderer, SLIDER_FREQ, 100.0f, 100.0f, 500.0f, &gen.period, 1.0f, 50.0f)) {
             regen_preview_stream(&gen);
         }
 
