@@ -26,24 +26,24 @@ typedef struct {
     float a;                // interpolator beween `current` and `target`
 } Gen;
 
-float clampf(float v, float lo, float hi)
+static inline float clampf(float v, float lo, float hi)
 {
     if (v < lo) v = lo;
     if (v > hi) v = hi;
     return v;
 }
 
-float lerpf(float a, float b, float t)
+static inline float lerpf(float a, float b, float t)
 {
     return (b - a) * t + a;
 }
 
-float ilerpf(float a, float b, float v)
+static inline float ilerpf(float a, float b, float v)
 {
     return (v - a) / (b - a);
 }
 
-void next_period(Gen *gen)
+static void next_period(Gen *gen)
 {
     Sint16 value = rand_r(&gen->seedp) % (1 << 10);
     Sint16 sign = (rand_r(&gen->seedp) % 2) * 2 - 1;
@@ -52,7 +52,7 @@ void next_period(Gen *gen)
     gen->a = 0.0f;
 }
 
-Sint16 next_sample(Gen *gen)
+static Sint16 next_sample(Gen *gen)
 {
     if (!gen->initialized || gen->a >= 1.0) {
         next_period(gen);
@@ -67,14 +67,14 @@ Sint16 next_sample(Gen *gen)
     return floorf(lerpf(gen->current, gen->target, gen->a) * gen->volume);
 }
 
-void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
+static void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 {
     for (size_t i = 0; i < stream_len; ++i) {
         stream[i] = next_sample(gen);
     }
 }
 
-void white_noise_callback(void *userdata, Uint8 *stream, int len)
+static void white_noise_callback(void *userdata, Uint8 *stream, int len)
 {
     assert(len % 2 == 0);
     white_noise(userdata, (Sint16*) stream, len / 2);
@@ -88,15 +88,15 @@ void white_noise_callback(void *userdata, Uint8 *stream, int len)
 
 #define BACKGROUND_COLOR 0x181818FF
 
-int active_id = -1;
+static int active_id = -1;
 
 #define WAVE_PREVIEW_WIDTH 1000.0f
 #define WAVE_PREVIEW_HEIGHT 300.0f
 #define WAVE_PREVIEW_SAMPLE_COLOR 0xFFFF00FF
 
-void wave_preview(SDL_Renderer *renderer,
-                  float pos_x, float pos_y,
-                  const Gen *parent_gen, size_t samples_count)
+static void wave_preview(SDL_Renderer *renderer,
+                         float pos_x, float pos_y,
+                         const Gen *parent_gen, size_t samples_count)
 {
     // TODO: when sample_width < 0 nothing is drawn
     float sample_width = WAVE_PREVIEW_WIDTH / (float) samples_count;
@@ -131,9 +131,9 @@ void wave_preview(SDL_Renderer *renderer,
 #define SLIDER_GRIP_SIZE 30.0f
 #define SLIDER_GRIP_COLOR 0xFF0000FF
 
-void slider(SDL_Renderer *renderer, int id,
-            float pos_x, float pos_y, float len,
-            float *value, float min, float max)
+static void slider(SDL_Renderer *renderer, int id,
+                   float pos_x, float pos_y, float len,
+                   float *value, float min, float max)
 {
     // TODO: display the current value of the slider
 
