@@ -52,9 +52,9 @@ void next_period(Gen *gen)
     gen->a = 0.0f;
 }
 
-void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
+Sint16 next_sample(Gen *gen)
 {
-    if (!gen->initialized) {
+    if (!gen->initialized || gen->a >= 1.0) {
         next_period(gen);
         gen->initialized = true;
     }
@@ -62,14 +62,15 @@ void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
     // TODOO: Mix in more randomness into the generated white noise (subfrequency)
     float step = 1.0f / (float) gen->period;
 
-    for (size_t i = 0; i < stream_len; ++i) {
-        gen->a += step;
-        // TODOO: smoother interpolation
-        stream[i] = floorf(lerpf(gen->current, gen->target, gen->a) * gen->volume);
+    gen->a += step;
+    // TODOO: smoother interpolation
+    return floorf(lerpf(gen->current, gen->target, gen->a) * gen->volume);
+}
 
-        if (gen->a >= 1.0f) {
-            next_period(gen);
-        }
+void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
+{
+    for (size_t i = 0; i < stream_len; ++i) {
+        stream[i] = next_sample(gen);
     }
 }
 
@@ -95,17 +96,23 @@ int active_id = -1;
 
 void wave_preview(SDL_Renderer *renderer,
                   float pos_x, float pos_y,
-                  Sint16 *stream, size_t stream_len)
+                  const Gen *parent_gen, size_t samples_count)
 {
     // TODO: when sample_width < 0 nothing is drawn
-    float sample_width = WAVE_PREVIEW_WIDTH / (float) stream_len;
+    float sample_width = WAVE_PREVIEW_WIDTH / (float) samples_count;
     float y_axis = pos_y + WAVE_PREVIEW_HEIGHT * 0.5f;
 
-    for (size_t i = 0; i < stream_len; ++i) {
+    Gen gen = {
+        .period = parent_gen->period,
+        .volume = parent_gen->volume,
+    };
+
+    for (size_t i = 0; i < samples_count; ++i) {
+        Sint16 sample = next_sample(&gen);
         float sample_x = pos_x + (float) i * sample_width;
         float sample_y = lerpf(pos_y,
                                pos_y + WAVE_PREVIEW_HEIGHT,
-                               ilerpf(-((1 << 10) - 1), ((1 << 10) - 1), stream[i]));
+                               ilerpf(-((1 << 10) - 1), ((1 << 10) - 1), sample));
 
         SDL_SetRenderDrawColor(renderer, HEXCOLOR(WAVE_PREVIEW_SAMPLE_COLOR));
         SDL_Rect rect = {
@@ -124,12 +131,10 @@ void wave_preview(SDL_Renderer *renderer,
 #define SLIDER_GRIP_SIZE 30.0f
 #define SLIDER_GRIP_COLOR 0xFF0000FF
 
-bool slider(SDL_Renderer *renderer, int id,
+void slider(SDL_Renderer *renderer, int id,
             float pos_x, float pos_y, float len,
             float *value, float min, float max)
 {
-    bool modified = false;
-
     // TODO: display the current value of the slider
 
     // Slider Body
@@ -181,13 +186,10 @@ bool slider(SDL_Renderer *renderer, int id,
                     xf = ilerpf(grip_min, grip_max, xf);
                     xf = lerpf(min, max, xf);
                     *value = xf;
-                    modified = true;
                 }
             }
         }
     }
-
-    return modified;
 }
 
 typedef enum {
@@ -196,17 +198,7 @@ typedef enum {
     SLIDER_VOLUME,
 } Slider;
 
-#define PREVIEW_STREAM_CAP 100
-Sint16 preview_stream[PREVIEW_STREAM_CAP];
-
-void regen_preview_stream(const Gen *gen)
-{
-    Gen preview_gen = {
-        .period = gen->period,
-        .volume = gen->volume,
-    };
-    white_noise(&preview_gen, preview_stream, PREVIEW_STREAM_CAP);
-}
+#define WAVE_PREVIEW_SAMPLES 100
 
 int main(void)
 {
@@ -231,8 +223,6 @@ int main(void)
         .period = 10.0f,
         .volume = 0.5f,
     };
-
-    regen_preview_stream(&gen);
 
     SDL_AudioSpec desired = {
         .freq = FREQ,
@@ -266,15 +256,9 @@ int main(void)
 
         // TODOO: automatic layouting of the widgets based on the window size
 
-        if (slider(renderer, SLIDER_FREQ, 100.0f, 100.0f, 500.0f, &gen.period, 1.0f, 50.0f)) {
-            regen_preview_stream(&gen);
-        }
-
-        if (slider(renderer, SLIDER_VOLUME, 100.0f, 200.0f, 500.0f, &gen.volume, 0.0f, 1.0f)) {
-            regen_preview_stream(&gen);
-        }
-
-        wave_preview(renderer, 100.0f, 300.0f, preview_stream, PREVIEW_STREAM_CAP);
+        slider(renderer, SLIDER_FREQ, 100.0f, 100.0f, 500.0f, &gen.period, 1.0f, 50.0f);
+        slider(renderer, SLIDER_VOLUME, 100.0f, 200.0f, 500.0f, &gen.volume, 0.0f, 1.0f);
+        wave_preview(renderer, 100.0f, 300.0f, &gen, WAVE_PREVIEW_SAMPLES);
 
         SDL_RenderPresent(renderer);
     }
