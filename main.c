@@ -193,9 +193,10 @@ static void slider(SDL_Renderer *renderer, int id,
 }
 
 typedef enum {
-    // TODOO: add a slider for the amount of preview samples
     SLIDER_FREQ = 0,
     SLIDER_VOLUME,
+    // TODOO: add a slider for the amount of preview samples
+    // TODO: add a slider for additional noise for the periods
 } Slider;
 
 #define WAVE_PREVIEW_SAMPLES 100
