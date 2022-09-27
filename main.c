@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include <math.h>
+#include <signal.h>
 
 #include <SDL.h>
 
@@ -80,6 +81,12 @@ static void white_noise_callback(void *userdata, Uint8 *stream, int len)
     white_noise(userdata, (Sint16*) stream, len / 2);
 }
 
+static void interrupt(int signal)
+{
+    SDL_Quit();
+    exit(EXIT_SUCCESS);
+}
+
 int main(void)
 {
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
@@ -107,19 +114,10 @@ int main(void)
 
     SDL_PauseAudio(0);
 
-    bool quit = false;
-    while (!quit) {
-        SDL_Event event;
-        while(SDL_PollEvent(&event)) {
-            switch(event.type) {
-            case SDL_QUIT:
-                quit = true;
-            }
-            break;
-        }
-    }
+    signal(SIGINT, interrupt);
+    while (1);
 
     SDL_Quit();
 
-    return 0;
+    return EXIT_SUCCESS;
 }
