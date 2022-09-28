@@ -8,6 +8,7 @@
 #include <SDL.h>
 
 #define FREQ 43200
+#define MONO 1
 #define SAMPLE_DT (1.0f / (float) FREQ)
 
 // TODO: Better color scheme for the elements
@@ -29,8 +30,8 @@ typedef struct {
 
 static inline float clampf(float v, float lo, float hi)
 {
-    if (v < lo) v = lo;
-    if (v > hi) v = hi;
+    if(v < lo) v = lo;
+    if(v > hi) v = hi;
     return v;
 }
 
@@ -55,13 +56,13 @@ static void next_period(Gen *gen)
 
 static Sint16 next_sample(Gen *gen)
 {
-    if (!gen->initialized || gen->a >= 1.0) {
+    if(!gen->initialized || gen->a >= 1.0) {
         next_period(gen);
         gen->initialized = true;
     }
 
     // TODOO: Mix in more randomness into the generated white noise (subfrequency)
-    float step = 1.0f / (float) gen->period;
+   float step = 1.0f / (float) gen->period;
 
     gen->a += step;
     // TODOO: smoother interpolation
@@ -70,7 +71,7 @@ static Sint16 next_sample(Gen *gen)
 
 static void white_noise(Gen *gen, Sint16 *stream, size_t stream_len)
 {
-    for (size_t i = 0; i < stream_len; ++i) {
+    for(size_t i = 0; i < stream_len; ++i) {
         stream[i] = next_sample(gen);
     }
 }
@@ -83,13 +84,14 @@ static void white_noise_callback(void *userdata, Uint8 *stream, int len)
 
 static void interrupt(int signal)
 {
+    puts("\ninterrupting program...");
     SDL_Quit();
     exit(EXIT_SUCCESS);
 }
 
 int main(void)
 {
-    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+    if(SDL_Init(SDL_INIT_AUDIO) < 0) {
         fprintf(stderr, "ERROR: could not initialize SDL: %s\n", SDL_GetError());
         exit(1);
     }
@@ -102,12 +104,12 @@ int main(void)
     SDL_AudioSpec desired = {
         .freq = FREQ,
         .format = AUDIO_S16LSB,
-        .channels = 1,
+        .channels = MONO,
         .callback = white_noise_callback,
         .userdata = &gen,
     };
 
-    if (SDL_OpenAudio(&desired, NULL) < 0) {
+    if(SDL_OpenAudio(&desired, NULL) < 0) {
         fprintf(stderr, "ERROR: could not open audio device: %s\n", SDL_GetError());
         exit(1);
     }
@@ -115,7 +117,7 @@ int main(void)
     SDL_PauseAudio(0);
 
     signal(SIGINT, interrupt);
-    while (1);
+    while(1);
 
     SDL_Quit();
 
